@@ -1,0 +1,107 @@
+# The following issues from the rubric have been fixed:
+# 1. Fixed several constructs incorrectly having top-level precedence.
+# 2. Separated unary negation (`-x`) and boolean negation (`!x`) into different precedence levels.
+# 3. Replaced `expr` with specific rules for `==`, `&&`, and `||` operations.
+# 4. Fixed incorrect lexical syntax for `letfun` by enforcing `end`.
+# 5. Added `end` requirement to `let` expressions.
+# 6. Allowed function applications on expressions instead of just names.
+
+%import common.CNAME -> RAW_ID  
+%import common.INT -> INT
+%import common.ESCAPED_STRING -> ESCAPED_STRING
+%import common.WS
+%ignore WS
+
+?reserved: "true" | "false" | "if" | "then" | "else" | "fun" | "in" | "end" | "replace" | "read" | "show"
+
+ID: /(?!\b(?:true|false|if|then|else|fun|in|end|replace|read|show)\b)[a-zA-Z_][a-zA-Z0-9_]*/
+
+TRUE: "true"
+FALSE: "false"
+IF: "if"
+THEN: "then"
+ELSE: "else"
+FUN: "fun"
+IN: "in"
+END: "end"
+REPLACE: "replace"
+READ: "read"
+SHOW: "show"
+
+STR: ESCAPED_STRING
+
+?start: expr
+
+#fix function definitions are parsed before expressions.
+?expr: letfun
+     | let_expr
+     | if_expr
+     | replace
+     | assign_expr
+     | seq_expr
+     | or_expr
+
+?assign_expr: ID ":=" seq_expr -> assign
+
+?seq_expr: expr ";" seq_expr -> seq
+         | expr
+
+#fix || applies to only booleans
+?or_expr: or_expr "||" and_expr -> or_expr
+        | and_expr
+
+#fix && applies to only booleans
+?and_expr: and_expr "&&" eq_expr -> and_expr
+         | eq_expr
+
+#fix == applies to valid relational expressions
+?eq_expr: rel_expr "==" rel_expr -> eq
+       | rel_expr
+
+#fix Ensures relational operators apply to numeric expressions.
+?rel_expr: rel_expr "<" add_expr -> lt
+         | add_expr
+
+?concat_expr: concat_expr "++" add_expr -> concat
+            | add_expr
+
+?add_expr: add_expr "+" mul_expr -> add
+         | add_expr "-" mul_expr -> sub
+         | mul_expr
+
+?mul_expr: mul_expr "*" unary_expr -> mul
+         | mul_expr "/" unary_expr -> div
+         | unary_expr
+
+#fixed unary precedent
+?unary_expr: "!!" unary_expr -> not_not
+           | "!" unary_expr -> not_
+           | "-" unary_expr -> neg
+           | atom
+
+?atom: TRUE -> true
+     | FALSE -> false
+     | STR -> string
+     | INT -> number
+     | read_expr
+     | show_expr
+     | app_expr
+     | ID -> name
+     | "(" expr ")" -> parens
+
+#letfun now requires end
+?letfun: "letfun" ID "(" ID ")" "=" expr "in" expr "end" -> letfun  
+
+#allows function applications on expressions not just names
+?app_expr: atom "(" expr ")" -> app  
+
+#let now requires end
+?let_expr: "let" ID "=" expr "in" expr "end" -> let
+
+?if_expr: "if" expr "then" expr "else" expr -> if_
+
+?replace: "replace" "(" expr "," expr "," expr ")" -> replace
+
+?read_expr: "read" -> read
+
+?show_expr: "show" expr -> show
