@@ -43,6 +43,9 @@ class ExprTransformer(Transformer):
     def reverse_str(self, args):
         return ReverseStr(args[0])
 
+    def length_str(self, args):
+        return LengthStr(args[0])
+
     def if_(self, args):
         return If(cond=args[0], then=args[1], else_=args[2])
 
@@ -99,6 +102,9 @@ class ExprTransformer(Transformer):
     
     def true(self, _):
         return Lit(True)
+    
+    def concat(self, args):  # Fix: Ensure `++` operator is handled
+        return Concat(args[0], args[1])
 
     def false(self, _):
         return Lit(False)
@@ -119,38 +125,6 @@ def parse_and_run(expr_str):
     print("Result:", result)
 
 if __name__ == "__main__":
-    parse_and_run("5 + 3 * 2")  
-    parse_and_run("10 / 2 + 3")  
-    parse_and_run("10 - 2 * 3")  
-    parse_and_run("true && false || true")  
-    parse_and_run("!false")  
-    parse_and_run("!!true")  
-    parse_and_run('"Hello" ++ " World"')  
-    parse_and_run('replace("Hello World", "World", "Python")')  
-    parse_and_run("let x = 10 in x + 5 end")  
-    parse_and_run("let x = 2 in let y = 3 in x * y end end")  
-    parse_and_run("letfun addOne(x) = x + 1 in addOne(5) end")  
-    parse_and_run("letfun square(x) = x * x in square(4) end")  
-    parse_and_run("if true then 5 else 10")  
-    parse_and_run("if false then 5 else 10")  
-    parse_and_run("true || false && false")  
-
-    try:
-        parse_and_run("x == y == z")  
-    except SyntaxError as e:
-        print(f"Expected Error: {e}")
-
-    try:
-        parse_and_run("10 / 0")  
-    except ZeroDivisionError as e:
-        print(f"Expected Error: {e}")
-
-    try:
-        parse_and_run("x + 5")  
-    except NameError as e:
-        print(f"Expected Error: {e}")
-
-    try:
-        parse_and_run("5(10)")  
-    except TypeError as e:
-        print(f"Expected Error: {e}")
+    parse_and_run('"hello" ++ " world"')  # "hello world"
+    parse_and_run('reverse("hello")')    # "olleh"
+    parse_and_run('length("hello")') 

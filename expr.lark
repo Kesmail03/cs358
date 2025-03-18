@@ -5,6 +5,7 @@
 # 4. Fixed incorrect lexical syntax for `letfun` by enforcing `end`.
 # 5. Added `end` requirement to `let` expressions.
 # 6. Allowed function applications on expressions instead of just names.
+# 7. Added `reverse(str)` and `length(str)` as unary string operations.
 
 %import common.CNAME -> RAW_ID  
 %import common.INT -> INT
@@ -59,8 +60,8 @@ STR: ESCAPED_STRING
        | rel_expr
 
 #fix Ensures relational operators apply to numeric expressions.
-?rel_expr: rel_expr "<" add_expr -> lt
-         | add_expr
+?rel_expr: rel_expr "<" concat_expr -> lt
+         | concat_expr
 
 ?concat_expr: concat_expr "++" add_expr -> concat
             | add_expr
@@ -73,10 +74,12 @@ STR: ESCAPED_STRING
          | mul_expr "/" unary_expr -> div
          | unary_expr
 
-#fixed unary precedent
+# Fixed unary precedence & added `reverse()` and `length()`
 ?unary_expr: "!!" unary_expr -> not_not
            | "!" unary_expr -> not_
            | "-" unary_expr -> neg
+           | "reverse(" expr ")" -> reverse_str  # Reverse a string
+           | "length(" expr ")" -> length_str  # Get length of a string
            | atom
 
 ?atom: TRUE -> true
@@ -89,13 +92,13 @@ STR: ESCAPED_STRING
      | ID -> name
      | "(" expr ")" -> parens
 
-#letfun now requires end
+# letfun now requires `end`
 ?letfun: "letfun" ID "(" ID ")" "=" expr "in" expr "end" -> letfun  
 
-#allows function applications on expressions not just names
+# allows function applications on expressions not just names
 ?app_expr: atom "(" expr ")" -> app  
 
-#let now requires end
+# let now requires `end`
 ?let_expr: "let" ID "=" expr "in" expr "end" -> let
 
 ?if_expr: "if" expr "then" expr "else" expr -> if_
