@@ -149,10 +149,28 @@ Env = Dict[str, Literal]
 Store = Dict[str, Literal]
 
 def eval(expr: Expr, env: Env = None, store: Dict[str, Literal] = None) -> Literal:
-    if env is None:
-        env = {}
-    if store is None:
-        store = {}
+    if isinstance(expr, Lit):
+        return expr.value
+
+    elif isinstance(expr, Name):
+        if expr.name in env:
+            return env[expr.name]
+        raise NameError(f"Undefined variable: {expr.name}")
+
+    elif isinstance(expr, Let):
+        new_env = env.copy()
+        new_env[expr.name] = eval(expr.value_expr, env)
+        return eval(expr.body, new_env)
+
+    elif isinstance(expr, App):  # ✅ Add this case here
+        func = eval(expr.func, env)
+        if not isinstance(func, Letfun):
+            raise TypeError(f"'{func}' is not a function")  # Fix the error
+        arg = eval(expr.arg, env)
+        return eval(func.body, {**env, func.param: arg})
+
+    elif isinstance(expr, Letfun):  # Ensure FunVal is handled
+        return expr
 
     match expr:
         case Lit(value=value):
@@ -184,10 +202,10 @@ def eval(expr: Expr, env: Env = None, store: Dict[str, Literal] = None) -> Liter
             return left_val and right_val
 
         case Or(left=left, right=right):
-            left_val = eval(left, env, store)
-            right_val = eval(right, env, store)
+            left_val = eval(expr.left, env)
+            right_val = eval(expr.right, env)
             if not isinstance(left_val, bool) or not isinstance(right_val, bool):
-                raise TypeError("Operands of '||' must be boolean") # Changed
+                raise TypeError("Operands of '||' must be boolean")  # Fix the error
             return left_val or right_val
         
         case Not(expr=subexpr):
@@ -267,17 +285,15 @@ def eval(expr: Expr, env: Env = None, store: Dict[str, Literal] = None) -> Liter
 
         case Show(expr=expr):
             result = eval(expr, env, store)
-            print("Show:", result)
+            print(result)
             return result
 
         case Read():
-            if not sys.stdin.isatty():  
-                return 42
-            user_input = input("Enter an integer: ")
+            user_input = input()
             try:
                 return int(user_input)
             except ValueError:
-                raise ValueError("Invalid input, expected an integer")
+                raise TypeError("Input must be an integer")
             
         case ReverseStr(string_expr):
             str_val = eval(string_expr, env)

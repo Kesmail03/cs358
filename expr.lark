@@ -42,7 +42,7 @@ STR: ESCAPED_STRING
      | seq_expr
      | or_expr
 
-?assign_expr: ID ":=" seq_expr -> assign
+?assign_expr: ID ":=" expr -> assign
 
 ?seq_expr: expr ";" seq_expr -> seq
          | expr
@@ -56,7 +56,7 @@ STR: ESCAPED_STRING
          | eq_expr
 
 #fix == applies to valid relational expressions
-?eq_expr: rel_expr "==" rel_expr -> eq
+?eq_expr: eq_expr "==" rel_expr -> eq
        | rel_expr
 
 #fix Ensures relational operators apply to numeric expressions.
