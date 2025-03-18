@@ -173,9 +173,17 @@ def eval(expr: Expr, env: Env = None, store: Dict[str, Any] = None) -> Any:
             return -eval(expr, env)
 
         case And(left, right):
+            left_val = eval(left, env)
+            right_val = eval(right, env)
+            if not isinstance(left_val, bool) or not isinstance(right_val, bool):
+                raise TypeError("Operands of '&&' must be boolean")
             return eval(left, env) and eval(right, env)
 
         case Or(left, right):
+            left_val = eval(left, env)
+            right_val = eval(right, env)
+            if not isinstance(left_val, bool) or not isinstance(right_val, bool):
+                raise TypeError("Operands of '||' must be boolean")
             return eval(left, env) or eval(right, env)
 
         case Not(expr):
@@ -215,8 +223,9 @@ def eval(expr: Expr, env: Env = None, store: Dict[str, Any] = None) -> Any:
             raise TypeError("Length requires a string operand")
 
         case Letfun(name, param, body, in_expr):
-            env[name] = FunDef(param, body, env.copy())
-            return eval(in_expr, env)
+            new_env = env.copy()
+            new_env[name] = FunDef(param, body, new_env)            
+            return eval(in_expr, new_env)
 
         case App(fun_expr, arg_expr):
             func = eval(fun_expr, env)

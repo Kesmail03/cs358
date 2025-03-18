@@ -56,7 +56,7 @@ STR: ESCAPED_STRING
          | eq_expr
 
 #fix == applies to valid relational expressions
-?eq_expr: eq_expr "==" rel_expr -> eq
+?eq_expr: rel_expr "==" rel_expr -> eq
        | rel_expr
 
 #fix Ensures relational operators apply to numeric expressions.
